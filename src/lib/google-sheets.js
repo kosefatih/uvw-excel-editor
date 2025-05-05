@@ -5,17 +5,18 @@ import fs from "fs"
 // Google Sheets'ten veri okuma fonksiyonu
 export async function readGoogleSheet(spreadsheetId, range) {
   try {
-    // Kimlik bilgilerini yükle
-    const credentialsPath = path.join(process.cwd(), "credentials.json")
-
-    // Kimlik bilgileri dosyası yoksa hata fırlat
-    if (!fs.existsSync(credentialsPath)) {
-      console.error("credentials.json dosyası bulunamadı")
-      throw new Error("Google Sheets kimlik bilgileri bulunamadı")
+    const base64Credentials = process.env.GOOGLE_CREDENTIALS_BASE64
+    if (!base64Credentials) {
+      throw new Error("GOOGLE_CREDENTIALS_BASE64 environment variable not set")
     }
 
+    // Base64 string'i parse edilecek hale getir
+    const credentials = JSON.parse(
+      Buffer.from(base64Credentials, "base64").toString("utf-8")
+    )
+
     const auth = new google.auth.GoogleAuth({
-      keyFile: credentialsPath,
+      credentials,
       scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
     })
 
