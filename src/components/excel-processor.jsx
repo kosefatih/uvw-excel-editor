@@ -450,14 +450,14 @@ export default function ExcelProcessor() {
         <TabsContent value="process">
           {/* Process Steps */}
           <div className="flex mb-6">
-            <div className={`flex-1 text-center border-b-2 ${step >= 1 ? "border-blue-500" : "border-gray-300"}`}>
-              <p className={`font-medium ${step >= 1 ? "text-blue-600" : "text-gray-500"}`}>1. Dosya Seç</p>
+            <div className={`flex-1 text-center border-b-2 ${step >= 1 ? "border-black" : "border-gray-300"}`}>
+              <p className={`font-medium ${step >= 1 ? "text-black" : "text-gray-500"}`}>1. Dosya Seç</p>
             </div>
-            <div className={`flex-1 text-center border-b-2 ${step >= 2 ? "border-blue-500" : "border-gray-300"}`}>
-              <p className={`font-medium ${step >= 2 ? "text-blue-600" : "text-gray-500"}`}>2. Pano Seç</p>
+            <div className={`flex-1 text-center border-b-2 ${step >= 2 ? "border-black" : "border-gray-300"}`}>
+              <p className={`font-medium ${step >= 2 ? "text-black" : "text-gray-500"}`}>2. Pano Seç</p>
             </div>
-            <div className={`flex-1 text-center border-b-2 ${step >= 3 ? "border-blue-500" : "border-gray-300"}`}>
-              <p className={`font-medium ${step >= 3 ? "text-blue-600" : "text-gray-500"}`}>3. Tamamlandı</p>
+            <div className={`flex-1 text-center border-b-2 ${step >= 3 ? "border-black" : "border-gray-300"}`}>
+              <p className={`font-medium ${step >= 3 ? "text-black" : "text-gray-500"}`}>3. Tamamlandı</p>
             </div>
           </div>
 
@@ -465,7 +465,7 @@ export default function ExcelProcessor() {
           {step === 1 && (
             <div className="text-center">
               <Label htmlFor="file-upload" className="cursor-pointer">
-                <div className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center mx-auto w-fit">
+                <div className="px-6 py-3 bg-black text-white rounded-lg hover:bg-black transition flex items-center justify-center mx-auto w-fit">
                   <FileText className="inline mr-2" />
                   Excel Dosyası Seç
                 </div>
@@ -484,7 +484,7 @@ export default function ExcelProcessor() {
           {/* Step 2: Ort Selection */}
           {step === 2 && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Ort Değerlerini Seçin</h2>
+              <h2 className="text-xl font-semibold mb-4">Pano Seçin</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 max-h-96 overflow-y-auto p-2">
                 {ortValues.map((ort) => (
                   <div
@@ -492,12 +492,12 @@ export default function ExcelProcessor() {
                     onClick={() => toggleOrtSelection(ort)}
                     className={`p-3 border rounded-lg cursor-pointer flex items-center ${
                       selectedOrts.includes(ort)
-                        ? "bg-blue-100 border-blue-500"
+                        ? "bg-blue-100 border-black"
                         : "bg-white border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     {selectedOrts.includes(ort) ? (
-                      <CheckCheck className="text-blue-600 mr-2" />
+                      <CheckCheck className="text-black mr-2" />
                     ) : (
                       <Check className="text-gray-400 mr-2" />
                     )}
