@@ -454,7 +454,7 @@ export default function ExcelProcessor() {
               <p className={`font-medium ${step >= 1 ? "text-blue-600" : "text-gray-500"}`}>1. Dosya Seç</p>
             </div>
             <div className={`flex-1 text-center border-b-2 ${step >= 2 ? "border-blue-500" : "border-gray-300"}`}>
-              <p className={`font-medium ${step >= 2 ? "text-blue-600" : "text-gray-500"}`}>2. Ort Seç</p>
+              <p className={`font-medium ${step >= 2 ? "text-blue-600" : "text-gray-500"}`}>2. Pano Seç</p>
             </div>
             <div className={`flex-1 text-center border-b-2 ${step >= 3 ? "border-blue-500" : "border-gray-300"}`}>
               <p className={`font-medium ${step >= 3 ? "text-blue-600" : "text-gray-500"}`}>3. Tamamlandı</p>
