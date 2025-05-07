@@ -423,7 +423,7 @@ export default function ExcelProcessor() {
       </AlertDialog>
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Excel İşleme Uygulaması</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Excel Makro Kontrol</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

@@ -4,7 +4,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Excel İşleme Uygulaması",
+  title: "Excel Makro Kontrol",
   description: "Excel dosyalarını işlemek için web uygulaması",
 }
 
