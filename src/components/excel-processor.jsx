@@ -15,6 +15,7 @@ import {
   RefreshCw,
   FileCheck,
 } from "lucide-react"
+import ImportModal from '@/components/import-modal';
 import { Toaster, toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -44,7 +45,10 @@ export default function ExcelProcessor() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [itemToDelete, setItemToDelete] = useState({ type: "", id: "" })
   const [codeCheckResult, setCodeCheckResult] = useState(null)
-
+  const [importFile, setImportFile] = useState(null);
+  const [importType, setImportType] = useState("abbreviations"); // 'abbreviations', 'replacements', 'exclusions'
+  const [importProgress, setImportProgress] = useState(0);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [newRule, setNewRule] = useState({
     regexPattern: "",
     outputFormat: "",
@@ -336,6 +340,47 @@ export default function ExcelProcessor() {
       setLoading(false)
     }
   }
+
+  const handleImportExcel = async () => {
+  if (!importFile || !importType) return;
+
+  setLoading(true);
+  setImportProgress(0);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", importFile);
+    formData.append("type", importType);
+
+    const response = await fetch("/api/import", {
+      method: "POST",
+      body: formData,
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
+        setImportProgress(percentCompleted);
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      toast.success(`${data.count} öğe başarıyla içe aktarıldı!`);
+      refreshData();
+      setShowImportModal(false);
+      setImportFile(null);
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "İçe aktarım başarısız oldu");
+    }
+  } catch (error) {
+    console.error("İçe aktarım hatası:", error);
+    toast.error(error.message || "Excel dosyası içe aktarılırken hata oluştu");
+  } finally {
+    setLoading(false);
+    setImportProgress(0);
+  }
+};
 
   // Show delete confirmation dialog
   const confirmDelete = (type, id) => {
@@ -673,6 +718,18 @@ export default function ExcelProcessor() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Mevcut Filtreler</CardTitle>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setImportType('abbreviations');
+                    setShowImportModal(true);
+                  }}
+                  className="flex items-center"
+                >
+                  <FileText className="mr-2" size={14} />
+                  İçe Aktar
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 text-gray-400" size={16} />
                   <Input
@@ -693,6 +750,7 @@ export default function ExcelProcessor() {
                 </Button>
               </div>
             </CardHeader>
+                <ImportModal open={showImportModal} onOpenChange={setShowImportModal} type={importType} />
             <CardContent>
               {(exclusions || []).length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">

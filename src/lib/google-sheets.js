@@ -38,7 +38,7 @@ export async function readGoogleSheet(spreadsheetId, range) {
 // Kodları Google Sheets ile kontrol etme fonksiyonu
 export async function checkCodesAgainstGoogleSheet(codes) {
   try {
-    const SPREADSHEET_ID = "1DrI9mqm9MaV_NtX7OAGbxbL1XdM1X5OTeDbg1XDLgUY"
+    const SPREADSHEET_ID = "1s8oYYkAtML4X4s4CoQu8jHrOajl2B842C9TTWuEVV7o"
     // A sütunu: Onay durumu, D sütunu: Onay durumu, G sütunu: Kodlar
     const RANGE = "Makro Kontrol!A:G" // Tüm sütunları alıyoruz
 
@@ -134,4 +134,135 @@ export function getAllCodesCount(ortGroups, targetCode) {
   })
 
   return count
+}
+
+
+// Excel'den belirli sütunları okuyup Google Sheets formatına dönüştürme
+export async function prepareDataForGoogleSheets(excelData) {
+  return excelData.map((row) => {
+    // Google Sheets'teki sütun sırasına göre düzenle:
+    // G: Ürün Numarası (Excel'de B), H: Tip Numarası (D), I: Sipariş Numarası (E), J: Üretici (F), K: Üretici Adı (G)
+    // Diğer sütunlar boş olacak (A-F arası)
+    return [
+      "", // A sütunu boş
+      "", // B
+      "", // C
+      "", // D
+      "", // E
+      "", // F
+      row["Ürün numarası"] || row["B"] || "", // G sütunu (Excel'den B)
+      row["Tip numarası"] || row["D"] || "", // H sütunu (Excel'den D)
+      row["Sipariş numarası"] || row["E"] || "", // I sütunu (Excel'den E)
+      row["Üretici"] || row["F"] || "", // J sütunu (Excel'den F)
+      row["Üretici adı"] || row["G"] || "", // K sütunu (Excel'den G)
+    ];
+  });
+}
+
+// Excel verisinden benzersiz ürünleri çıkarır (örneğin "ÜrünKodu" ile)
+function filterUniqueByProductCode(data, productCodeKey = "ÜrünKodu") {
+  const seen = new Set();
+  return data.filter((item) => {
+    const code = item[productCodeKey];
+    if (!code || seen.has(code)) return false;
+    seen.add(code);
+    return true;
+  });
+}
+
+// Google Sheets verisinden sadece ürün kodlarını çeker
+async function getExistingProductCodes(sheets, spreadsheetId, sheetName, column = "A") {
+  const range = `${sheetName}!${column}2:${column}`;
+  const result = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range,
+  });
+
+  const rows = result.data.values || [];
+  return new Set(rows.map((row) => row[0]));
+}
+
+export async function transferProductDataFromExcelToGoogleSheet(
+  excelFilePath,
+  googleSpreadsheetId,
+  googleSheetName = "Test"
+) {
+  try {
+    // 1. Excel dosyasını oku
+    const workbook = xlsx.readFile(excelFilePath);
+    const firstSheetName = workbook.SheetNames[0];
+    const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
+
+    if (!excelData || excelData.length === 0) {
+      throw new Error("Excel dosyası boş veya okunamadı");
+    }
+
+    // 2. Aynı ürün koduna sahip Excel satırlarını eleyerek benzersiz hale getir
+    const uniqueExcelData = filterUniqueByProductCode(excelData, "ÜrünKodu");
+
+    // 3. Google kimlik doğrulaması
+    const base64Credentials = process.env.GOOGLE_CREDENTIALS_BASE64;
+    if (!base64Credentials) {
+      throw new Error("GOOGLE_CREDENTIALS_BASE64 environment variable not set");
+    }
+
+    const credentials = JSON.parse(
+      Buffer.from(base64Credentials, "base64").toString("utf-8")
+    );
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: "v4", auth: client });
+
+    // 4. Mevcut ürün kodlarını Google Sheets'ten çek
+    const existingProductCodes = await getExistingProductCodes(
+      sheets,
+      googleSpreadsheetId,
+      googleSheetName,
+      "G" // ÜrünKodu'nun G sütununda olduğunu varsayıyoruz
+    );
+
+    // 5. Excel verisinden sadece Google Sheet'te olmayanları al
+    const newData = uniqueExcelData.filter(
+      (item) => !existingProductCodes.has(item["ÜrünKodu"])
+    );
+
+    if (newData.length === 0) {
+      return {
+        success: true,
+        message: "Aktarılacak yeni veri yok (tümü zaten mevcut).",
+      };
+    }
+
+    // 6. Sheets'e uygun formata dönüştür
+    const values = prepareDataForGoogleSheets(newData); // bu fonksiyon zaten sende var
+
+    // 7. Verileri Google Sheet'e ekle
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId: googleSpreadsheetId,
+      range: `${googleSheetName}!A2:K`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      resource: {
+        values,
+      },
+    });
+
+    return {
+      success: true,
+      insertedRows: values.length,
+      insertedProductCodes: newData.map((item) => item["ÜrünKodu"]),
+      updatedRange: response.data.updates?.updatedRange,
+    };
+  } catch (error) {
+    console.error("Veri aktarım hatası:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 }
