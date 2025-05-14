@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import xlsx from "xlsx"; // Eksikti, eklendi
+import * as xlsx from "xlsx"; // Eksikti, eklendi
 
 // Google Sheets'ten veri okuma fonksiyonu
 export async function readGoogleSheet(spreadsheetId, range) {
