@@ -38,7 +38,7 @@ export async function readGoogleSheet(spreadsheetId, range) {
 // Kodları Google Sheets ile kontrol etme fonksiyonu
 export async function checkCodesAgainstGoogleSheet(codes) {
   try {
-    const SPREADSHEET_ID = "1s8oYYkAtML4X4s4CoQu8jHrOajl2B842C9TTWuEVV7o"
+    const SPREADSHEET_ID = "1DrI9mqm9MaV_NtX7OAGbxbL1XdM1X5OTeDbg1XDLgUY"
     // A sütunu: Onay durumu, D sütunu: Onay durumu, G sütunu: Kodlar
     const RANGE = "Makro Kontrol!A:G" // Tüm sütunları alıyoruz
 
@@ -185,7 +185,7 @@ async function getExistingProductCodes(sheets, spreadsheetId, sheetName, column 
 export async function transferProductDataFromExcelToGoogleSheet(
   excelFilePath,
   googleSpreadsheetId,
-  googleSheetName = "Test"
+  googleSheetName = "Makro Kontrol"
 ) {
   try {
     // 1. Excel dosyasını oku
