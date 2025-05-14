@@ -36,7 +36,7 @@ export async function POST(request) {
     // 4. Veriyi Google Sheets'e yaz
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: "1s8oYYkAtML4X4s4CoQu8jHrOajl2B842C9TTWuEVV7o",
-      range: "Test!A2:AD2",
+      range: "Sayfa1!A2:AD2",
       valueInputOption: "USER_ENTERED",
       insertDataOption: "INSERT_ROWS",
       resource: {
