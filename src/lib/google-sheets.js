@@ -244,7 +244,7 @@ export async function transferProductDataFromExcelToGoogleSheet(
     // 7. Verileri Google Sheet'e ekle
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: googleSpreadsheetId,
-      range: `${googleSheetName}!A2:K`,
+      range: `${googleSheetName}!A2:AD`,
       valueInputOption: "USER_ENTERED",
       insertDataOption: "INSERT_ROWS",
       resource: {
