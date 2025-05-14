@@ -185,7 +185,7 @@ async function getExistingProductCodes(sheets, spreadsheetId, sheetName, column 
 export async function transferProductDataFromExcelToGoogleSheet(
   excelFilePath,
   googleSpreadsheetId,
-  googleSheetName = "Makro Kontrol"
+  googleSheetName = "Test"
 ) {
   try {
     // 1. Excel dosyasını oku
