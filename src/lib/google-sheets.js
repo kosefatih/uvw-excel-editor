@@ -162,7 +162,10 @@ export async function transferProductDataFromExcelToGoogleSheet(
   try {
     const workbook = xlsx.readFile(excelFilePath);
     const firstSheetName = workbook.SheetNames[0];
-    const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
+    const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      range: 1, // 0-index: 1 demek 2. satırdan başla (başlık olarak kabul et)
+      defval: "", // boş hücreler için "" ata
+});
 
     if (!excelData || excelData.length === 0) {
       throw new Error("Excel dosyası boş veya okunamadı");
