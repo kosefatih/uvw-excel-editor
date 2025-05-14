@@ -166,6 +166,8 @@ export async function transferProductDataFromExcelToGoogleSheet(
       range: 1, // 0-index: 1 demek 2. satırdan başla (başlık olarak kabul et)
       defval: "", // boş hücreler için "" ata
 });
+    console.log("Excel'den okunan veri:", excelData); // <== EKLEDİK
+
 
     if (!excelData || excelData.length === 0) {
       throw new Error("Excel dosyası boş veya okunamadı");
