@@ -1,98 +1,127 @@
-'use client'; // Next.js app router kullanıyorsan bu gerekli olabilir
-
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '@/components/ui/alert-dialog'; // Kendi import yoluna göre değiştir
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { useState } from 'react';
+import styles from './ExcelUploadModal.module.css';
+import { toast } from 'sonner';
 
-const ImportModal = ({ open, onOpenChange, type }) => {
-  const [importFile, setImportFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+const ExcelUploadModal = ({ isOpen, onClose, onUpload }) => {
+  const [file, setFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  const handleImportExcel = async () => {
-    if (!importFile || !type) return;
-    setLoading(true);
+  if (!isOpen) return null;
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    // Dosya uzantısını kontrol et
+    const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+    if (!['xlsx', 'xls'].includes(fileExtension)) {
+      toast.error('Lütfen geçerli bir Excel dosyası seçin (.xlsx veya .xls)');
+      return;
+    }
+
+    setFile(selectedFile);
+    setMessage({ text: '', type: '' });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      setMessage({ text: 'Lütfen bir dosya seçin', type: 'error' });
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage({ text: 'Dosya işleniyor...', type: 'info' });
 
     try {
       const formData = new FormData();
-      formData.append('file', importFile);
-      formData.append('type', type);
+      formData.append('file', file);
 
       const response = await fetch('/api/import', {
         method: 'POST',
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(`${data.count} öğe başarıyla içe aktarıldı!`);
-        onOpenChange(false);
-        setImportFile(null);
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
+        throw new Error('Sunucu yanıtı işlenirken hata oluştu');
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sunucu hatası');
+      }
+
+      if (data.success) {
+        setMessage({ text: data.message, type: 'success' });
+        toast.success(data.message);
+        onUpload(); // Ana bileşene başarılı yükleme bilgisini iletmek için
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'İçe aktarım başarısız oldu');
+        throw new Error(data.error || 'İşlem başarısız oldu');
       }
     } catch (error) {
-      console.error('İçe aktarım hatası:', error);
-      toast.error(error.message || 'Excel dosyası içe aktarılırken hata oluştu');
+      console.error('Error:', error);
+      const errorMessage = error.message || 'Dosya işlenirken hata oluştu';
+      setMessage({ text: `Hata: ${errorMessage}`, type: 'error' });
+      toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Excel'den İçe Aktar</AlertDialogTitle>
-          <AlertDialogDescription>
-            Excel dosyasından veri içe aktarın. Dosya formatı seçtiğiniz türe uygun olmalıdır.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label>Excel Dosyası</Label>
-            <Input
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
+        <button className={styles.closeButton} onClick={onClose}>
+          &times;
+        </button>
+        <h2>Excel Dosyası Yükle</h2>
+        <p>Excel dosyanızı seçerek Google Sheets'e aktarabilirsiniz.</p>
+        
+        <form onSubmit={handleSubmit}>
+          <div className={styles.fileInputContainer}>
+            <input
               type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => setImportFile(e.target.files[0])}
-              disabled={loading}
+              id="excelFile"
+              accept=".xlsx, .xls"
+              onChange={handleFileChange}
+              className={styles.fileInput}
             />
-            <p className="text-sm text-gray-500 mt-1">
-              {type === 'abbreviations' &&
-                'Sütunlar: B (Ürün Numarası), D (Tip Numarası), E (Sipariş Numarası), F (Üretici), G (Üretici Adı)'}
-              {type === 'replacements' && 'Sütunlar: B (Orijinal), D (Yeni)'}
-              {type === 'exclusions' && 'Sütun: B (Sipariş Numarası)'}
-            </p>
+            <label htmlFor="excelFile" className={styles.fileInputLabel}>
+              {file ? file.name : 'Dosya Seç...'}
+            </label>
           </div>
-        </div>
-
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>İptal</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleImportExcel}
-            disabled={!importFile || loading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {loading && <Loader2 className="mr-2 animate-spin" size={16} />}
-            İçe Aktar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          
+          {message.text && (
+            <div className={`${styles.message} ${styles[message.type]}`}>
+              {message.text}
+            </div>
+          )}
+          
+          <div className={styles.buttonGroup}>
+            <button
+              type="button"
+              onClick={onClose}
+              className={styles.secondaryButton}
+              disabled={isLoading}
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={!file || isLoading}
+            >
+              {isLoading ? 'Yükleniyor...' : 'Yükle'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
-export default ImportModal;
+export default ExcelUploadModal;

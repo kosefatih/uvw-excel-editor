@@ -14,6 +14,7 @@ import {
   Search,
   RefreshCw,
   FileCheck,
+  Upload,
 } from "lucide-react"
 import ImportModal from '@/components/import-modal';
 import { Toaster, toast } from "sonner"
@@ -67,6 +68,7 @@ export default function ExcelProcessor() {
   const [exclusions, setExclusions] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [file, setFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   // Load data based on active tab
   useEffect(() => {
@@ -173,6 +175,34 @@ export default function ExcelProcessor() {
       toast.error(error.message || "Dosya işlenirken hata oluştu. Lütfen tekrar deneyin.")
     } finally {
       setLoading(false)
+    }
+  }
+
+    // Yeni: Google Sheet'e aktarma handler
+  const handleUploadToSheet = async () => {
+    if (!file) {
+      toast.error("Önce bir dosya seçin.")
+      return
+    }
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(`${data.added} satır Google Sheet'e eklendi.`)
+      } else {
+        throw new Error(data.error || "Aktarım sırasında hata oluştu.")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -341,46 +371,7 @@ export default function ExcelProcessor() {
     }
   }
 
-  const handleImportExcel = async () => {
-  if (!importFile || !importType) return;
 
-  setLoading(true);
-  setImportProgress(0);
-
-  try {
-    const formData = new FormData();
-    formData.append("file", importFile);
-    formData.append("type", importType);
-
-    const response = await fetch("/api/import", {
-      method: "POST",
-      body: formData,
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total
-        );
-        setImportProgress(percentCompleted);
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      toast.success(`${data.count} öğe başarıyla içe aktarıldı!`);
-      refreshData();
-      setShowImportModal(false);
-      setImportFile(null);
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "İçe aktarım başarısız oldu");
-    }
-  } catch (error) {
-    console.error("İçe aktarım hatası:", error);
-    toast.error(error.message || "Excel dosyası içe aktarılırken hata oluştu");
-  } finally {
-    setLoading(false);
-    setImportProgress(0);
-  }
-};
 
   // Show delete confirmation dialog
   const confirmDelete = (type, id) => {
@@ -439,7 +430,40 @@ export default function ExcelProcessor() {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
       {/* Sonner toast component */}
-      <Toaster position="top-right" />
+            <Toaster position="top-right" />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center">
+            <Loader2 className="animate-spin mr-2" />Yükleniyor...
+          </div>
+        </div>
+      )}
+      {/* Import Modal */}
+      <ImportModal 
+        isOpen={showImportModal} 
+        onClose={() => setShowImportModal(false)} 
+        onUpload={() => {
+          refreshData();
+          setShowImportModal(false);
+        }}
+      />
+      {/* Yeni buton: Excel'den İçe Aktar */}
+      <div className="mb-4 flex justify-end">
+        <Button 
+          onClick={() => {
+            setImportType('abbreviations');
+            setShowImportModal(true);
+          }} 
+          className="flex items-center"
+        >
+          <Upload className="mr-2" size={16} />
+          Excel'den İçe Aktar
+        </Button>
+      </div>
+      {/* Mevcut Tabs yapısı ... */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* ... */}
+      </Tabs>
       
       {/* Loading overlay */}
       {loading && (
